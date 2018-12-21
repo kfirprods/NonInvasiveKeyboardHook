@@ -10,11 +10,12 @@ keyboardHookManager.Start();
 // Register virtual key code 0x60 = NumPad0
 keyboardHookManager.RegisterHotkey(0x60, () =>
 {
-    // Check if the Control modifier key is held
-    if (keyboardHookManager.IsModifierDown(NonInvasiveKeyboardHookLibrary.ModifierKeys.Control))
-    {
-        Debug.WriteLine("Ctrl + NumPad0 detected. Unregistering keyboard hook");
-        keyboardHookManager.Stop();
-    }
+    Debug.WriteLine("NumPad0 detected");
+});
+
+// Modifiers are supported too
+keyboardHookManager.RegisterHotKey(new[]{ModifierKeys.Control, ModifierKeys.Alt}, 0x60, () =>
+{
+    Debug.WriteLine("Ctrl+Alt+NumPad0 detected");
 });
 ```
