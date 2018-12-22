@@ -14,7 +14,7 @@ keyboardHookManager.RegisterHotkey(0x60, () =>
 });
 
 // Modifiers are supported too
-keyboardHookManager.RegisterHotKey(new[]{ModifierKeys.Control, ModifierKeys.Alt}, 0x60, () =>
+keyboardHookManager.RegisterHotkey(new[]{NonInvasiveKeyboardHookLibrary.ModifierKeys.Control, NonInvasiveKeyboardHookLibrary.ModifierKeys.Alt}, 0x60, () =>
 {
     Debug.WriteLine("Ctrl+Alt+NumPad0 detected");
 });
