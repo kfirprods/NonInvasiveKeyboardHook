@@ -1,8 +1,12 @@
 # NonInvasiveKeyboardHook
 A C# hotkey manager that uses a low level global hook, but allows registering for specific keys to reduce invasion of user privacy.
 
+### Get it on NuGet
+https://www.nuget.org/packages/NonInvasiveKeyboardHookLibrary/
 
-Example:
+
+
+### Example
 ```csharp
 var keyboardHookManager = new KeyboardHookManager();
 keyboardHookManager.Start();
@@ -10,11 +14,12 @@ keyboardHookManager.Start();
 // Register virtual key code 0x60 = NumPad0
 keyboardHookManager.RegisterHotkey(0x60, () =>
 {
-    // Check if the Control modifier key is held
-    if (keyboardHookManager.IsModifierDown(NonInvasiveKeyboardHookLibrary.ModifierKeys.Control))
-    {
-        Debug.WriteLine("Ctrl + NumPad0 detected. Unregistering keyboard hook");
-        keyboardHookManager.Stop();
-    }
+    Debug.WriteLine("NumPad0 detected");
+});
+
+// Modifiers are supported too
+keyboardHookManager.RegisterHotkey(new[]{NonInvasiveKeyboardHookLibrary.ModifierKeys.Control, NonInvasiveKeyboardHookLibrary.ModifierKeys.Alt}, 0x60, () =>
+{
+    Debug.WriteLine("Ctrl+Alt+NumPad0 detected");
 });
 ```
