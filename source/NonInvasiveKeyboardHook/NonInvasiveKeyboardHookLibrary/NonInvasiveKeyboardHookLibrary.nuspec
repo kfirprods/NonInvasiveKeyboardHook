@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>1.0.0</version>
+    <title>Non-Invasive Keyboard Hook</title>
+    <authors>Kfir Eichenblat</authors>
+    <owners>Kfir Eichenblat</owners>
+    <projectUrl>https://github.com/kfirprods/NonInvasiveKeyboardHook</projectUrl>
+	<license type="expression">MIT</license>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>A hotkey manager that uses a low-level keyboard hook in a way that avoids invading the user's privacy, by invoking callbacks only when specific registered keys are hit.</description>
+    <releaseNotes>First version.</releaseNotes>
+    <copyright>Copyright 2018</copyright>
+    <tags>keyboard keyboardhook hotkey hotkeymanager hotkeys</tags>
+  </metadata>
+</package>

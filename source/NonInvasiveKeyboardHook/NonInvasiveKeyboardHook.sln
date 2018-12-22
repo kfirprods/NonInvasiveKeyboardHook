@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27004.2006
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeyboardHookSample", "KeyboardHookSample\KeyboardHookSample.csproj", "{408C6510-6335-41D9-9B46-ED7E1D018DE8}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NonInvasiveKeyboardHookLibrary", "NonInvasiveKeyboardHookLibrary\NonInvasiveKeyboardHookLibrary.csproj", "{0DF3EABA-2C33-4E77-B2DB-B6D23146EDAB}"
 EndProject
 Global
@@ -13,10 +11,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{408C6510-6335-41D9-9B46-ED7E1D018DE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{408C6510-6335-41D9-9B46-ED7E1D018DE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{408C6510-6335-41D9-9B46-ED7E1D018DE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{408C6510-6335-41D9-9B46-ED7E1D018DE8}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0DF3EABA-2C33-4E77-B2DB-B6D23146EDAB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0DF3EABA-2C33-4E77-B2DB-B6D23146EDAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0DF3EABA-2C33-4E77-B2DB-B6D23146EDAB}.Release|Any CPU.ActiveCfg = Release|Any CPU

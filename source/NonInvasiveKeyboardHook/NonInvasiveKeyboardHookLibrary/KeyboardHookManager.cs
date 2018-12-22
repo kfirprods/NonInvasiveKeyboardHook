@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace NonInvasiveKeyboardHookLibrary
@@ -10,18 +11,20 @@ namespace NonInvasiveKeyboardHookLibrary
     /// </summary>
     public class KeyboardHookManager
     {
-        private readonly Dictionary<int, List<Action>> _registeredCallbacks;
+        private readonly Dictionary<KeybindStruct, Action> _registeredCallbacks;
         private readonly HashSet<ModifierKeys> _downModifierKeys;
+        private LowLevelKeyboardProc _hook;
 
         public KeyboardHookManager()
         {
-            this._registeredCallbacks = new Dictionary<int, List<Action>>();
+            this._registeredCallbacks = new Dictionary<KeybindStruct, Action>();
             this._downModifierKeys = new HashSet<ModifierKeys>();
         }
 
         public void Start()
         {
-            _hookId = SetHook(this.HookCallback);
+            this._hook = this.HookCallback;
+            _hookId = SetHook(this._hook);
         }
 
         public void Stop()
@@ -31,27 +34,50 @@ namespace NonInvasiveKeyboardHookLibrary
 
         public void RegisterHotkey(int virtualKeyCode, Action action)
         {
-            if (!this._registeredCallbacks.ContainsKey(virtualKeyCode))
+            this.RegisterHotkey(new ModifierKeys[0], virtualKeyCode, action);
+        }
+
+        public void RegisterHotkey(ModifierKeys[] modifiers, int virtualKeyCode, Action action)
+        {
+            var keybind = new KeybindStruct(modifiers, virtualKeyCode);
+            if (this._registeredCallbacks.ContainsKey(keybind))
             {
-                this._registeredCallbacks[virtualKeyCode] = new List<Action>();
+                throw new HotkeyAlreadyRegisteredException();
             }
 
-            this._registeredCallbacks[virtualKeyCode].Add(action);
+            this._registeredCallbacks[keybind] = action;
         }
 
-        public bool IsModifierDown(ModifierKeys modifier)
+        public void UnregisterAll()
         {
-            return this._downModifierKeys.Contains(modifier);
+            this._registeredCallbacks.Clear();
         }
 
+        public void UnregisterHotkey(int virtualKeyCode)
+        {
+            this.UnregisterHotkey(new ModifierKeys[0], virtualKeyCode);
+        }
+
+        public void UnregisterHotkey(ModifierKeys[] modifiers, int virtualKeyCode)
+        {
+            var keybind = new KeybindStruct(modifiers, virtualKeyCode);
+
+            if (!this._registeredCallbacks.Remove(keybind))
+            {
+                throw new HotkeyNotRegisteredException();
+            }
+        }
+        
         private void HandleKeyPress(int virtualKeyCode)
         {
-            if (!this._registeredCallbacks.ContainsKey(virtualKeyCode))
+            var currentKey = new KeybindStruct(this._downModifierKeys, virtualKeyCode);
+
+            if (!this._registeredCallbacks.ContainsKey(currentKey))
             {
                 return;
             }
 
-            foreach (var callback in this._registeredCallbacks[virtualKeyCode])
+            if (this._registeredCallbacks.TryGetValue(currentKey, out var callback))
             {
                 callback.Invoke();
             }
@@ -63,6 +89,8 @@ namespace NonInvasiveKeyboardHookLibrary
         private const int WH_KEYBOARD_LL = 13;
         private const int WM_KEYDOWN = 0x0100;
         private const int WM_KEYUP = 0x0101;
+        private const int WM_SYSKEYDOWN = 0x0104;
+        private const int WM_SYSKEYUP = 0x0105;
 
         private static IntPtr _hookId = IntPtr.Zero;
 
@@ -81,7 +109,7 @@ namespace NonInvasiveKeyboardHookLibrary
                 var vkCode = Marshal.ReadInt32(lParam);
                 var modifierKey = ModifierKeysUtilities.GetModifierKeyFromCode(vkCode);
 
-                if (wParam == (IntPtr) WM_KEYDOWN)
+                if (wParam == (IntPtr) WM_KEYDOWN || wParam == (IntPtr) WM_SYSKEYDOWN)
                 {
                     if (modifierKey != null)
                     {
@@ -89,7 +117,7 @@ namespace NonInvasiveKeyboardHookLibrary
                     }
                 }
 
-                if (wParam == (IntPtr) WM_KEYUP)
+                if (wParam == (IntPtr) WM_KEYUP || wParam == (IntPtr) WM_SYSKEYUP)
                 {
                     if (modifierKey != null)
                     {
@@ -126,5 +154,17 @@ namespace NonInvasiveKeyboardHookLibrary
         [DllImport("kernel32.dll")]
         private static extern IntPtr LoadLibrary(string lpFileName);
         #endregion
+    }
+
+    public class NonInvasiveKeyboardHookException : Exception
+    {
+    }
+
+    public class HotkeyAlreadyRegisteredException : NonInvasiveKeyboardHookException
+    {
+    }
+
+    public class HotkeyNotRegisteredException : NonInvasiveKeyboardHookException
+    {
     }
 }
