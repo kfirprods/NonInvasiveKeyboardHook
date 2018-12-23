@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace NonInvasiveKeyboardHookLibrary
@@ -11,32 +10,63 @@ namespace NonInvasiveKeyboardHookLibrary
     /// </summary>
     public class KeyboardHookManager
     {
+        #region Private Attributes
         private readonly Dictionary<KeybindStruct, Action> _registeredCallbacks;
         private readonly HashSet<ModifierKeys> _downModifierKeys;
         private LowLevelKeyboardProc _hook;
+        #endregion
 
+        #region Constructors
+        /// <summary>
+        /// Instantiates an empty keyboard hook manager.
+        /// It is best practice to keep a single instance per process.
+        /// Start() must be called to start the low-level keyboard hook manager
+        /// </summary>
         public KeyboardHookManager()
         {
             this._registeredCallbacks = new Dictionary<KeybindStruct, Action>();
             this._downModifierKeys = new HashSet<ModifierKeys>();
         }
+        #endregion
 
+        #region Public API
+        /// <summary>
+        /// Starts the low-level keyboard hook.
+        /// Hotkeys can be registered regardless of the low-level keyboard hook's state, but their callbacks
+        /// will only ever be invoked if the low-level keyboard hook is running and intercepting keys.
+        /// </summary>
         public void Start()
         {
             this._hook = this.HookCallback;
             _hookId = SetHook(this._hook);
         }
 
+        /// <summary>
+        /// Pauses the low-level keyboard hook without unregistering the existing hotkeys
+        /// </summary>
         public void Stop()
         {
             UnhookWindowsHookEx(_hookId);
         }
 
+        /// <summary>
+        /// Registers a hotkey.
+        /// </summary>
+        /// <param name="virtualKeyCode">The virtual key code of the hotkey</param>
+        /// <param name="action">The callback action to invoke when this hotkey is pressed</param>
+        /// <exception cref="HotkeyAlreadyRegisteredException">Thrown when the given key is already mapped to a callback</exception>
         public void RegisterHotkey(int virtualKeyCode, Action action)
         {
             this.RegisterHotkey(new ModifierKeys[0], virtualKeyCode, action);
         }
 
+        /// <summary>
+        /// Registers a new key combination.
+        /// </summary>
+        /// <param name="modifiers">Modifiers that must be held while hitting the key</param>
+        /// <param name="virtualKeyCode">The virtual key code of the standard key</param>
+        /// <param name="action">The callback action to invoke when this combination is pressed</param>
+        /// <exception cref="HotkeyAlreadyRegisteredException">Thrown when the given key combination is already mapped to a callback</exception>
         public void RegisterHotkey(ModifierKeys[] modifiers, int virtualKeyCode, Action action)
         {
             var keybind = new KeybindStruct(modifiers, virtualKeyCode);
@@ -48,16 +78,30 @@ namespace NonInvasiveKeyboardHookLibrary
             this._registeredCallbacks[keybind] = action;
         }
 
+        /// <summary>
+        /// Unregisters all hotkeys (the low-level keyboard hook continues running)
+        /// </summary>
         public void UnregisterAll()
         {
             this._registeredCallbacks.Clear();
         }
 
+        /// <summary>
+        /// Unregisters a specific single-key hotkey
+        /// </summary>
+        /// <param name="virtualKeyCode">Virtual key code of the unregistered key</param>
+        /// <exception cref="HotkeyNotRegisteredException">Thrown when the given key combination is not registered</exception>
         public void UnregisterHotkey(int virtualKeyCode)
         {
             this.UnregisterHotkey(new ModifierKeys[0], virtualKeyCode);
         }
 
+        /// <summary>
+        /// Unregisters a specific key combination
+        /// </summary>
+        /// <param name="modifiers">The modifiers of the combination</param>
+        /// <param name="virtualKeyCode">The key of the combination</param>
+        /// <exception cref="HotkeyNotRegisteredException">Thrown when the given key combination is not registered</exception>
         public void UnregisterHotkey(ModifierKeys[] modifiers, int virtualKeyCode)
         {
             var keybind = new KeybindStruct(modifiers, virtualKeyCode);
@@ -67,7 +111,9 @@ namespace NonInvasiveKeyboardHookLibrary
                 throw new HotkeyNotRegisteredException();
             }
         }
-        
+        #endregion
+
+        #region Private methods
         private void HandleKeyPress(int virtualKeyCode)
         {
             var currentKey = new KeybindStruct(this._downModifierKeys, virtualKeyCode);
@@ -82,6 +128,7 @@ namespace NonInvasiveKeyboardHookLibrary
                 callback.Invoke();
             }
         }
+        #endregion
 
         #region Low level keyboard hook
         // Source: https://blogs.msdn.microsoft.com/toub/2006/05/03/low-level-keyboard-hook-in-c/
@@ -156,6 +203,7 @@ namespace NonInvasiveKeyboardHookLibrary
         #endregion
     }
 
+    #region Exceptions
     public class NonInvasiveKeyboardHookException : Exception
     {
     }
@@ -167,4 +215,5 @@ namespace NonInvasiveKeyboardHookLibrary
     public class HotkeyNotRegisteredException : NonInvasiveKeyboardHookException
     {
     }
+    #endregion
 }
