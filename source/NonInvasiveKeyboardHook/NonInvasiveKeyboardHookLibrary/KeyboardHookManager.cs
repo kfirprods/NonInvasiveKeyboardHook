@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace NonInvasiveKeyboardHookLibrary
@@ -55,9 +56,10 @@ namespace NonInvasiveKeyboardHookLibrary
         /// <param name="virtualKeyCode">The virtual key code of the hotkey</param>
         /// <param name="action">The callback action to invoke when this hotkey is pressed</param>
         /// <exception cref="HotkeyAlreadyRegisteredException">Thrown when the given key is already mapped to a callback</exception>
-        public void RegisterHotkey(int virtualKeyCode, Action action)
+        /// /// <returns>Unique identifier of this hotkey, which can be used to remove it later</returns>
+        public Guid RegisterHotkey(int virtualKeyCode, Action action)
         {
-            this.RegisterHotkey(new ModifierKeys[0], virtualKeyCode, action);
+            return this.RegisterHotkey(new ModifierKeys[0], virtualKeyCode, action);
         }
 
         /// <summary>
@@ -67,15 +69,18 @@ namespace NonInvasiveKeyboardHookLibrary
         /// <param name="virtualKeyCode">The virtual key code of the standard key</param>
         /// <param name="action">The callback action to invoke when this combination is pressed</param>
         /// <exception cref="HotkeyAlreadyRegisteredException">Thrown when the given key combination is already mapped to a callback</exception>
-        public void RegisterHotkey(ModifierKeys[] modifiers, int virtualKeyCode, Action action)
+        /// <returns>Unique identifier of this hotkey, which can be used to remove it later</returns>
+        public Guid RegisterHotkey(ModifierKeys[] modifiers, int virtualKeyCode, Action action)
         {
-            var keybind = new KeybindStruct(modifiers, virtualKeyCode);
+            var keybindIdentity = Guid.NewGuid();
+            var keybind = new KeybindStruct(modifiers, virtualKeyCode, keybindIdentity);
             if (this._registeredCallbacks.ContainsKey(keybind))
             {
                 throw new HotkeyAlreadyRegisteredException();
             }
 
             this._registeredCallbacks[keybind] = action;
+            return keybindIdentity;
         }
 
         /// <summary>
@@ -110,6 +115,21 @@ namespace NonInvasiveKeyboardHookLibrary
             {
                 throw new HotkeyNotRegisteredException();
             }
+        }
+
+        /// <summary>
+        /// Unregisters a specific key by its unique identifier
+        /// </summary>
+        /// <param name="keybindIdentity">Keybind GUID, as returned by RegisterHotkey</param>
+        public void UnregisterHotkey(Guid keybindIdentity)
+        {
+            var keybindToRemove = this._registeredCallbacks.Keys.FirstOrDefault(keybind =>
+                keybind.Identifier.HasValue && keybind.Identifier.Value.Equals(keybindIdentity));
+
+            if (keybindToRemove == null || !this._registeredCallbacks.Remove(keybindToRemove))
+            {
+                throw new HotkeyNotRegisteredException();
+            }   
         }
         #endregion
 

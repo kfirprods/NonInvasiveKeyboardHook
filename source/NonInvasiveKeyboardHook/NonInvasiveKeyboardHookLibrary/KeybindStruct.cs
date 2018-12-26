@@ -12,15 +12,20 @@ namespace NonInvasiveKeyboardHookLibrary
     {
         public readonly int VirtualKeyCode;
         public readonly List<ModifierKeys> Modifiers;
+        public readonly Guid? Identifier;
 
-        public KeybindStruct(IEnumerable<ModifierKeys> modifiers, int virtualKeyCode)
+        public KeybindStruct(IEnumerable<ModifierKeys> modifiers, int virtualKeyCode, Guid? identifier = null)
         {
             this.VirtualKeyCode = virtualKeyCode;
             this.Modifiers = new List<ModifierKeys>(modifiers);
+            this.Identifier = identifier;
         }
 
         public bool Equals(KeybindStruct other)
         {
+            if (other == null)
+                return false;
+
             if (this.VirtualKeyCode != other.VirtualKeyCode)
                 return false;
 
