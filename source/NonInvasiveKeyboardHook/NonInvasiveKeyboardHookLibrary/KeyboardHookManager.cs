@@ -63,6 +63,24 @@ namespace NonInvasiveKeyboardHookLibrary
         }
 
         /// <summary>
+        /// Registers a new key combination with one or more modifiers
+        /// </summary>
+        /// <param name="modifiers">Modifiers that must be held while hitting the key. Multiple modifiers can be provided using the flags bitwise OR operation</param>
+        /// <param name="virtualKeyCode">The virtual key code of the standard key</param>
+        /// <param name="action">The callback action to invoke when this combination is pressed</param>
+        /// <exception cref="HotkeyAlreadyRegisteredException">Thrown when the given key combination is already mapped to a callback</exception>
+        /// <returns>Unique identifier of this hotkey, which can be used to remove it later</returns>
+        public Guid RegisterHotkey(ModifierKeys modifiers, int virtualKeyCode, Action action)
+        {
+            var allModifiers = Enum.GetValues(typeof(ModifierKeys)).Cast<ModifierKeys>().ToArray();
+
+            // Get the modifiers that were chained with bitwise OR operation as an array of modifiers
+            var selectedModifiers = allModifiers.Where(modifier => modifiers.HasFlag(modifier)).ToArray();
+
+            return RegisterHotkey(selectedModifiers, virtualKeyCode, action);
+        }
+
+        /// <summary>
         /// Registers a new key combination.
         /// </summary>
         /// <param name="modifiers">Modifiers that must be held while hitting the key</param>

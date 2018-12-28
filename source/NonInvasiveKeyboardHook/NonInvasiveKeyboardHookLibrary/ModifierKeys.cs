@@ -1,10 +1,14 @@
-﻿namespace NonInvasiveKeyboardHookLibrary
+﻿using System;
+
+namespace NonInvasiveKeyboardHookLibrary
 {
+    [Flags]
     public enum ModifierKeys
     {
-        Alt,
-        Control,
-        Shift
+        Alt = 0,
+        Control = 1,
+        Shift = 2,
+        WindowsKey = 4,
     }
 
     public static class ModifierKeysUtilities
@@ -27,6 +31,10 @@
                 case 0xA4:
                 case 0xA5:
                     return ModifierKeys.Alt;
+
+                case 0x5B:
+                case 0x5C:
+                    return ModifierKeys.WindowsKey;
 
                 default:
                     return null;

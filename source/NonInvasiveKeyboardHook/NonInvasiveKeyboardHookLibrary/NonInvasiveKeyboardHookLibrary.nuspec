@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>$id$</id>
-    <version>1.0.1</version>
+    <version>1.2.0</version>
     <title>Non-Invasive Keyboard Hook</title>
     <authors>Kfir Eichenblat</authors>
     <owners>Kfir Eichenblat</owners>
@@ -10,7 +10,7 @@
 	<license type="expression">MIT</license>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>A hotkey manager that uses a low-level keyboard hook in a way that avoids invading the user's privacy, by invoking callbacks only when specific registered keys are hit.</description>
-    <releaseNotes>First version.</releaseNotes>
+    <releaseNotes>Added support for Windows Key as a modifier key; Added new overload for RegisterHotkey that accepts modifier key(s) as flags</releaseNotes>
     <copyright>Copyright 2018</copyright>
     <tags>keyboard keyboardhook hotkey hotkeymanager hotkeys</tags>
   </metadata>
