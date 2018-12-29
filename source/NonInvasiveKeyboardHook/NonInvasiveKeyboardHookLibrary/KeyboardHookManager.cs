@@ -2,9 +2,22 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace NonInvasiveKeyboardHookLibrary
 {
+    internal struct KeyboardParams
+    {
+        public IntPtr wParam;
+        public int vkCode;
+
+        public KeyboardParams(IntPtr wParam, int vkCode)
+        {
+            this.wParam = wParam;
+            this.vkCode = vkCode;
+        }
+    }
+
     /// <summary>
     /// A hotkey manager that uses a low-level global keyboard hook, but eventually only fires events for
     /// pre-registered hotkeys, i.e. not invading a user's privacy.
@@ -28,7 +41,7 @@ namespace NonInvasiveKeyboardHookLibrary
             this._registeredCallbacks = new Dictionary<KeybindStruct, Action>();
             this._downModifierKeys = new HashSet<ModifierKeys>();
         }
-        #endregion
+        #endregion        
 
         #region Public API
         /// <summary>
@@ -43,7 +56,7 @@ namespace NonInvasiveKeyboardHookLibrary
         }
 
         /// <summary>
-        /// Pauses the low-level keyboard hook without unregistering the existing hotkeys
+        /// Pauses the low-level keyboard hook (without unregistering the existing hotkeys)
         /// </summary>
         public void Stop()
         {
@@ -170,7 +183,6 @@ namespace NonInvasiveKeyboardHookLibrary
 
         #region Low level keyboard hook
         // Source: https://blogs.msdn.microsoft.com/toub/2006/05/03/low-level-keyboard-hook-in-c/
-
         private const int WH_KEYBOARD_LL = 13;
         private const int WM_KEYDOWN = 0x0100;
         private const int WM_KEYUP = 0x0101;
@@ -186,34 +198,49 @@ namespace NonInvasiveKeyboardHookLibrary
             return SetWindowsHookEx(WH_KEYBOARD_LL, proc,
                 userLibrary, 0);
         }
-
-        public IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+        
+        private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
             if (nCode >= 0)
             {
                 var vkCode = Marshal.ReadInt32(lParam);
-                var modifierKey = ModifierKeysUtilities.GetModifierKeyFromCode(vkCode);
 
-                if (wParam == (IntPtr) WM_KEYDOWN || wParam == (IntPtr) WM_SYSKEYDOWN)
-                {
-                    if (modifierKey != null)
-                    {
-                        this._downModifierKeys.Add(modifierKey.Value);
-                    }
-                }
-
-                if (wParam == (IntPtr) WM_KEYUP || wParam == (IntPtr) WM_SYSKEYUP)
-                {
-                    if (modifierKey != null)
-                    {
-                        this._downModifierKeys.Remove(modifierKey.Value);
-                    }
-
-                    this.HandleKeyPress(vkCode);
-                }
+                // To prevent slowing keyboard input down, we use handle keyboard inputs in a separate thread
+                ThreadPool.QueueUserWorkItem(this.HandleSingleKeyboardInput, new KeyboardParams(wParam, vkCode));
             }
 
             return CallNextHookEx(_hookId, nCode, wParam, lParam);
+        }
+
+        /// <summary>
+        /// Handles a keyboard event based on the KeyboardParams it receives
+        /// </summary>
+        /// <param name="keyboardParamsObj">KeyboardParams struct (object type to comply with QueueUserWorkItem)</param>
+        private void HandleSingleKeyboardInput(object keyboardParamsObj)
+        {
+            var keyboardParams = (KeyboardParams)keyboardParamsObj;
+            var wParam = keyboardParams.wParam;
+            var vkCode = keyboardParams.vkCode;
+
+            var modifierKey = ModifierKeysUtilities.GetModifierKeyFromCode(vkCode);
+
+            if (wParam == (IntPtr)WM_KEYDOWN || wParam == (IntPtr)WM_SYSKEYDOWN)
+            {
+                if (modifierKey != null)
+                {
+                    this._downModifierKeys.Add(modifierKey.Value);
+                }
+            }
+
+            if (wParam == (IntPtr)WM_KEYUP || wParam == (IntPtr)WM_SYSKEYUP)
+            {
+                if (modifierKey != null)
+                {
+                    this._downModifierKeys.Remove(modifierKey.Value);
+                }
+
+                this.HandleKeyPress(vkCode);
+            }
         }
 
         private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
