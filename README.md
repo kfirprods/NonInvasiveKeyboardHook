@@ -18,6 +18,18 @@ keyboardHookManager.RegisterHotkey(0x60, () =>
 });
 
 // Modifiers are supported too
+keyboardHookManager.RegisterHotkey(NonInvasiveKeyboardHookLibrary.ModifierKeys.Control, 0x60, () => 
+{ 
+    Debug.WriteLine("Ctrl+NumPad0 detected");
+});
+
+// Multiple modifiers can be specified using the bitwise OR operation
+keyboardHookManager.RegisterHotkey(NonInvasiveKeyboardHookLibrary.ModifierKeys.Control | NonInvasiveKeyboardHookLibrary.ModifierKeys.Alt, 0x60, () => 
+{ 
+    Debug.WriteLine("Ctrl+Alt+NumPad0 detected");
+});
+
+// Or as an enum of modifiers
 keyboardHookManager.RegisterHotkey(new[]{NonInvasiveKeyboardHookLibrary.ModifierKeys.Control, NonInvasiveKeyboardHookLibrary.ModifierKeys.Alt}, 0x60, () =>
 {
     Debug.WriteLine("Ctrl+Alt+NumPad0 detected");
