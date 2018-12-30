@@ -37,4 +37,5 @@ keyboardHookManager.RegisterHotkey(new[]{NonInvasiveKeyboardHookLibrary.Modifier
 ```
 
 For more code examples, look at the example project: https://github.com/kfirprods/ShortcutHotkeysExample
+
 For a thorough explanation, look at the CodeProject article: https://www.codeproject.com/Articles/1273010/Global-Hotkeys-within-Desktop-Applications
