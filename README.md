@@ -29,7 +29,7 @@ keyboardHookManager.RegisterHotkey(NonInvasiveKeyboardHookLibrary.ModifierKeys.C
     Debug.WriteLine("Ctrl+Alt+NumPad0 detected");
 });
 
-// Or as an enum of modifiers
+// Or as an array of modifiers
 keyboardHookManager.RegisterHotkey(new[]{NonInvasiveKeyboardHookLibrary.ModifierKeys.Control, NonInvasiveKeyboardHookLibrary.ModifierKeys.Alt}, 0x60, () =>
 {
     Debug.WriteLine("Ctrl+Alt+NumPad0 detected");
