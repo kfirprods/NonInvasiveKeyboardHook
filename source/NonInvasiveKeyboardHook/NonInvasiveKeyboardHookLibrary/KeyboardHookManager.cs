@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -27,6 +28,7 @@ namespace NonInvasiveKeyboardHookLibrary
         #region Private Attributes
         private readonly Dictionary<KeybindStruct, Action> _registeredCallbacks;
         private readonly HashSet<ModifierKeys> _downModifierKeys;
+        private readonly object _modifiersLock = new object();
         private LowLevelKeyboardProc _hook;
         #endregion
 
@@ -205,8 +207,10 @@ namespace NonInvasiveKeyboardHookLibrary
             {
                 var vkCode = Marshal.ReadInt32(lParam);
 
+                Debug.WriteLine("Starting");
                 // To prevent slowing keyboard input down, we use handle keyboard inputs in a separate thread
                 ThreadPool.QueueUserWorkItem(this.HandleSingleKeyboardInput, new KeyboardParams(wParam, vkCode));
+                Debug.WriteLine("Ending");
             }
 
             return CallNextHookEx(_hookId, nCode, wParam, lParam);
@@ -218,6 +222,8 @@ namespace NonInvasiveKeyboardHookLibrary
         /// <param name="keyboardParamsObj">KeyboardParams struct (object type to comply with QueueUserWorkItem)</param>
         private void HandleSingleKeyboardInput(object keyboardParamsObj)
         {
+            Debug.WriteLine("Help!");
+
             var keyboardParams = (KeyboardParams)keyboardParamsObj;
             var wParam = keyboardParams.wParam;
             var vkCode = keyboardParams.vkCode;
@@ -228,7 +234,10 @@ namespace NonInvasiveKeyboardHookLibrary
             {
                 if (modifierKey != null)
                 {
-                    this._downModifierKeys.Add(modifierKey.Value);
+                    lock (this._modifiersLock)
+                    {
+                        this._downModifierKeys.Add(modifierKey.Value);
+                    }
                 }
             }
 
@@ -236,7 +245,10 @@ namespace NonInvasiveKeyboardHookLibrary
             {
                 if (modifierKey != null)
                 {
-                    this._downModifierKeys.Remove(modifierKey.Value);
+                    lock (this._modifiersLock)
+                    {
+                        this._downModifierKeys.Remove(modifierKey.Value);
+                    }
                 }
 
                 this.HandleKeyPress(vkCode);
