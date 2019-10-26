@@ -30,6 +30,7 @@ namespace NonInvasiveKeyboardHookLibrary
         private readonly HashSet<ModifierKeys> _downModifierKeys;
         private readonly object _modifiersLock = new object();
         private LowLevelKeyboardProc _hook;
+        private bool _isStarted;
         #endregion
 
         #region Constructors
@@ -53,8 +54,11 @@ namespace NonInvasiveKeyboardHookLibrary
         /// </summary>
         public void Start()
         {
+            if (this._isStarted) return;
+
             this._hook = this.HookCallback;
             _hookId = SetHook(this._hook);
+            this._isStarted = true;
         }
 
         /// <summary>
@@ -62,7 +66,11 @@ namespace NonInvasiveKeyboardHookLibrary
         /// </summary>
         public void Stop()
         {
-            UnhookWindowsHookEx(_hookId);
+            if (this._isStarted)
+            {
+                UnhookWindowsHookEx(_hookId);
+                this._isStarted = false;
+            }
         }
 
         /// <summary>
