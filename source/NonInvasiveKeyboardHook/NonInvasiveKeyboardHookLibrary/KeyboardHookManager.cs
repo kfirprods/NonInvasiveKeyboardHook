@@ -230,16 +230,16 @@ namespace NonInvasiveKeyboardHookLibrary
         /// <param name="keyboardParamsObj">KeyboardParams struct (object type to comply with QueueUserWorkItem)</param>
         private void HandleSingleKeyboardInput(object keyboardParamsObj)
         {
-            Debug.WriteLine("Help!");
-
             var keyboardParams = (KeyboardParams)keyboardParamsObj;
             var wParam = keyboardParams.wParam;
             var vkCode = keyboardParams.vkCode;
 
             var modifierKey = ModifierKeysUtilities.GetModifierKeyFromCode(vkCode);
 
+            // If the keyboard event is a KeyDown event (i.e. key pressed)
             if (wParam == (IntPtr)WM_KEYDOWN || wParam == (IntPtr)WM_SYSKEYDOWN)
             {
+                // In this case, we only care about modifier keys
                 if (modifierKey != null)
                 {
                     lock (this._modifiersLock)
@@ -249,8 +249,10 @@ namespace NonInvasiveKeyboardHookLibrary
                 }
             }
 
+            // If the keyboard event is a KeyUp event (i.e. key released)
             if (wParam == (IntPtr)WM_KEYUP || wParam == (IntPtr)WM_SYSKEYUP)
             {
+                // If the released key is a modifier key, remove it from the HashSet of modifier keys
                 if (modifierKey != null)
                 {
                     lock (this._modifiersLock)
