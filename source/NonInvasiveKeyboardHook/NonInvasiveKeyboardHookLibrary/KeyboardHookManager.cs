@@ -26,8 +26,19 @@ namespace NonInvasiveKeyboardHookLibrary
     public class KeyboardHookManager
     {
         #region Private Attributes
+        /// <summary>
+        /// Keeps track of all registered hotkeys
+        /// </summary>
         private readonly Dictionary<KeybindStruct, Action> _registeredCallbacks;
+        /// <summary>
+        /// Keeps track of modifier keys that are held down
+        /// </summary>
         private readonly HashSet<ModifierKeys> _downModifierKeys;
+        /// <summary>
+        /// Keeps track of all keys that are held down to prevent firing callbacks
+        /// more than once for a single keypress
+        /// </summary>
+        private readonly HashSet<int> _downKeys;
         private readonly object _modifiersLock = new object();
         private LowLevelKeyboardProc _hook;
         private bool _isStarted;
@@ -43,6 +54,7 @@ namespace NonInvasiveKeyboardHookLibrary
         {
             this._registeredCallbacks = new Dictionary<KeybindStruct, Action>();
             this._downModifierKeys = new HashSet<ModifierKeys>();
+            this._downKeys = new HashSet<int>();
         }
         #endregion        
 
@@ -247,6 +259,13 @@ namespace NonInvasiveKeyboardHookLibrary
                         this._downModifierKeys.Add(modifierKey.Value);
                     }
                 }
+
+                // Trigger callbacks that are registered for this key, but only once per key press
+                if (!this._downKeys.Contains(vkCode))
+                {
+                    this.HandleKeyPress(vkCode);
+                    this._downKeys.Add(vkCode);
+                }
             }
 
             // If the keyboard event is a KeyUp event (i.e. key released)
@@ -261,7 +280,7 @@ namespace NonInvasiveKeyboardHookLibrary
                     }
                 }
 
-                this.HandleKeyPress(vkCode);
+                this._downKeys.Remove(vkCode);
             }
         }
 
