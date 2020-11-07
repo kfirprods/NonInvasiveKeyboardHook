@@ -36,6 +36,10 @@ keyboardHookManager.RegisterHotkey(new[]{NonInvasiveKeyboardHookLibrary.Modifier
 });
 ```
 
-For more code examples, look at the example project: https://github.com/kfirprods/ShortcutHotkeysExample
+### Sample App
+I created a GUI C# app to help test this library: https://github.com/kfirprods/ShortcutHotkeysExample
+If the examples above did not answer your questions, take a look at the source code of the sample app :)
+![Keyboard Shortcuts In-App Screenshot](https://i.imgur.com/wvEVjfJ.png)
 
+### Read more about Global Hotkeys within Windows applications
 For a thorough explanation, look at the CodeProject article: https://www.codeproject.com/Articles/1273010/Global-Hotkeys-within-Desktop-Applications
