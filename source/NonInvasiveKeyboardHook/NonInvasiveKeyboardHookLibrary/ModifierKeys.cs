@@ -5,10 +5,10 @@ namespace NonInvasiveKeyboardHookLibrary
     [Flags]
     public enum ModifierKeys
     {
-        Alt = 0,
-        Control = 1,
-        Shift = 2,
-        WindowsKey = 4,
+        Alt = 1,
+        Control = 2,
+        Shift = 4,
+        WindowsKey = 8,
     }
 
     public static class ModifierKeysUtilities
