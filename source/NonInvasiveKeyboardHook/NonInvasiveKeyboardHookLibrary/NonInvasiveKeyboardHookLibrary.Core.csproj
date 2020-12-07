@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+    <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+	<UseWindowsForms>true</UseWindowsForms>
+	<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	<Description>A C# hotkey manager that uses a low level global hook, but allows registering for specific keys to reduce invasion of user privacy.</Description>
+	<PackageProjectUrl>https://github.com/kfirprods/NonInvasiveKeyboardHook</PackageProjectUrl>
+	<RepositoryUrl>https://github.com/kfirprods/NonInvasiveKeyboardHook</RepositoryUrl>
+	<Authors>Kfir Eichenblat</Authors>
+	<Version>2.1.0</Version>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <WarningLevel>5</WarningLevel>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <None Remove="NonInvasiveKeyboardHookLibrary.nuspec" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+</Project>
