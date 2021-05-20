@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>NonInvasiveKeyboardHookLibrary</id>
-    <version>2.1.0</version>
+    <version>2.1.1</version>
     <title>Non-Invasive Keyboard Hook</title>
     <authors>Kfir Eichenblat</authors>
     <owners>Kfir Eichenblat</owners>
@@ -11,7 +11,7 @@
     <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
     <projectUrl>https://github.com/kfirprods/NonInvasiveKeyboardHook</projectUrl>
     <description>A hotkey manager that uses a low-level keyboard hook in a way that avoids invading the user's privacy, by invoking callbacks only when specific registered keys are hit.</description>
-    <releaseNotes>Fixed modifier keys bug - the [Flags] marked enum started from 0, causing Alt key to match even when there are no modifiers</releaseNotes>
+    <releaseNotes>Removed Debug.WriteLines from hook</releaseNotes>
     <copyright>None</copyright>
     <tags>keyboard keyboardhook hotkey hotkeymanager hotkeys global globalhook hook listener keyup keydown keypress</tags>
     <dependencies />

@@ -8,7 +8,7 @@
 	<PackageProjectUrl>https://github.com/kfirprods/NonInvasiveKeyboardHook</PackageProjectUrl>
 	<RepositoryUrl>https://github.com/kfirprods/NonInvasiveKeyboardHook</RepositoryUrl>
 	<Authors>Kfir Eichenblat</Authors>
-	<Version>2.1.0</Version>
+	<Version>2.1.1</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
