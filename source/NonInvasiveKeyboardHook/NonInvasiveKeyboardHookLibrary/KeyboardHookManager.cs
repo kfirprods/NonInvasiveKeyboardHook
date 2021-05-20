@@ -227,10 +227,10 @@ namespace NonInvasiveKeyboardHookLibrary
             {
                 var vkCode = Marshal.ReadInt32(lParam);
 
-                Debug.WriteLine("Starting");
+                // Debug.WriteLine("Starting");
                 // To prevent slowing keyboard input down, we use handle keyboard inputs in a separate thread
                 ThreadPool.QueueUserWorkItem(this.HandleSingleKeyboardInput, new KeyboardParams(wParam, vkCode));
-                Debug.WriteLine("Ending");
+                // Debug.WriteLine("Ending");
             }
 
             return CallNextHookEx(_hookId, nCode, wParam, lParam);
