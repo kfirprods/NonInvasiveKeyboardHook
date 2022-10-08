@@ -1,35 +1,34 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace NonInvasiveKeyboardHookLibrary
 {
-    internal struct KeyboardParams
-    {
-        public IntPtr wParam;
-        public int vkCode;
-
-        public KeyboardParams(IntPtr wParam, int vkCode)
-        {
-            this.wParam = wParam;
-            this.vkCode = vkCode;
-        }
-    }
-
     /// <summary>
     /// A hotkey manager that uses a low-level global keyboard hook, but eventually only fires events for
     /// pre-registered hotkeys, i.e. not invading a user's privacy.
     /// </summary>
     public class KeyboardHookManager
     {
+        internal class CallbackStruct
+        {
+            public readonly Action Action;
+            public readonly bool Blocking;
+
+            public CallbackStruct(Action action, bool blocking)
+            {
+                this.Action = action;
+                this.Blocking = blocking;
+            }
+        }
+
         #region Private Attributes
         /// <summary>
         /// Keeps track of all registered hotkeys
         /// </summary>
-        private readonly Dictionary<KeybindStruct, Action> _registeredCallbacks;
+        private readonly Dictionary<KeybindStruct, CallbackStruct> _registeredCallbacks;
         /// <summary>
         /// Keeps track of modifier keys that are held down
         /// </summary>
@@ -52,7 +51,7 @@ namespace NonInvasiveKeyboardHookLibrary
         /// </summary>
         public KeyboardHookManager()
         {
-            this._registeredCallbacks = new Dictionary<KeybindStruct, Action>();
+            this._registeredCallbacks = new Dictionary<KeybindStruct, CallbackStruct>();
             this._downModifierKeys = new HashSet<ModifierKeys>();
             this._downKeys = new HashSet<int>();
         }
@@ -90,11 +89,12 @@ namespace NonInvasiveKeyboardHookLibrary
         /// </summary>
         /// <param name="virtualKeyCode">The virtual key code of the hotkey</param>
         /// <param name="action">The callback action to invoke when this hotkey is pressed</param>
+        /// <param name="blocking">Boolean indicating wether to block the original shortcut from propagating</param>
         /// <exception cref="HotkeyAlreadyRegisteredException">Thrown when the given key is already mapped to a callback</exception>
         /// /// <returns>Unique identifier of this hotkey, which can be used to remove it later</returns>
-        public Guid RegisterHotkey(int virtualKeyCode, Action action)
+        public Guid RegisterHotkey(int virtualKeyCode, Action action, bool blocking = false)
         {
-            return this.RegisterHotkey(new ModifierKeys[0], virtualKeyCode, action);
+            return this.RegisterHotkey(new ModifierKeys[0], virtualKeyCode, action, blocking);
         }
 
         /// <summary>
@@ -103,16 +103,17 @@ namespace NonInvasiveKeyboardHookLibrary
         /// <param name="modifiers">Modifiers that must be held while hitting the key. Multiple modifiers can be provided using the flags bitwise OR operation</param>
         /// <param name="virtualKeyCode">The virtual key code of the standard key</param>
         /// <param name="action">The callback action to invoke when this combination is pressed</param>
+        /// <param name="blocking">Boolean indicating wether to block the original shortcut from propagating</param>
         /// <exception cref="HotkeyAlreadyRegisteredException">Thrown when the given key combination is already mapped to a callback</exception>
         /// <returns>Unique identifier of this hotkey, which can be used to remove it later</returns>
-        public Guid RegisterHotkey(ModifierKeys modifiers, int virtualKeyCode, Action action)
+        public Guid RegisterHotkey(ModifierKeys modifiers, int virtualKeyCode, Action action, bool blocking = false)
         {
             var allModifiers = Enum.GetValues(typeof(ModifierKeys)).Cast<ModifierKeys>().ToArray();
 
             // Get the modifiers that were chained with bitwise OR operation as an array of modifiers
             var selectedModifiers = allModifiers.Where(modifier => modifiers.HasFlag(modifier)).ToArray();
 
-            return RegisterHotkey(selectedModifiers, virtualKeyCode, action);
+            return RegisterHotkey(selectedModifiers, virtualKeyCode, action, blocking);
         }
 
         /// <summary>
@@ -121,9 +122,10 @@ namespace NonInvasiveKeyboardHookLibrary
         /// <param name="modifiers">Modifiers that must be held while hitting the key</param>
         /// <param name="virtualKeyCode">The virtual key code of the standard key</param>
         /// <param name="action">The callback action to invoke when this combination is pressed</param>
+        /// <param name="blocking">Boolean indicating wether to block the original shortcut from propagating</param>
         /// <exception cref="HotkeyAlreadyRegisteredException">Thrown when the given key combination is already mapped to a callback</exception>
         /// <returns>Unique identifier of this hotkey, which can be used to remove it later</returns>
-        public Guid RegisterHotkey(ModifierKeys[] modifiers, int virtualKeyCode, Action action)
+        public Guid RegisterHotkey(ModifierKeys[] modifiers, int virtualKeyCode, Action action, bool blocking = false)
         {
             var keybindIdentity = Guid.NewGuid();
             var keybind = new KeybindStruct(modifiers, virtualKeyCode, keybindIdentity);
@@ -132,7 +134,8 @@ namespace NonInvasiveKeyboardHookLibrary
                 throw new HotkeyAlreadyRegisteredException();
             }
 
-            this._registeredCallbacks[keybind] = action;
+            var callbackStruct = new CallbackStruct(action, blocking);
+            this._registeredCallbacks[keybind] = callbackStruct;
             return keybindIdentity;
         }
 
@@ -182,24 +185,29 @@ namespace NonInvasiveKeyboardHookLibrary
             if (keybindToRemove == null || !this._registeredCallbacks.Remove(keybindToRemove))
             {
                 throw new HotkeyNotRegisteredException();
-            }   
+            }
         }
         #endregion
 
         #region Private methods
-        private void HandleKeyPress(int virtualKeyCode)
+        private void InvokeAction(object actionObj)
+        {
+            var action = (Action)actionObj;
+            action.Invoke();
+        }
+
+        private bool HandleKeyPress(int virtualKeyCode)
         {
             var currentKey = new KeybindStruct(this._downModifierKeys, virtualKeyCode);
 
-            if (!this._registeredCallbacks.ContainsKey(currentKey))
+            if (this._registeredCallbacks.ContainsKey(currentKey) &&
+                this._registeredCallbacks.TryGetValue(currentKey, out var callbackStruct))
             {
-                return;
+                ThreadPool.QueueUserWorkItem(this.InvokeAction, callbackStruct.Action);
+                return callbackStruct.Blocking;
             }
 
-            if (this._registeredCallbacks.TryGetValue(currentKey, out var callback))
-            {
-                callback.Invoke();
-            }
+            return false;
         }
         #endregion
 
@@ -217,36 +225,28 @@ namespace NonInvasiveKeyboardHookLibrary
         {
             var userLibrary = LoadLibrary("User32");
 
-            return SetWindowsHookEx(WH_KEYBOARD_LL, proc,
-                userLibrary, 0);
+            return SetWindowsHookEx(WH_KEYBOARD_LL, proc, userLibrary, 0);
         }
-        
+
         private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
             if (nCode >= 0)
             {
                 var vkCode = Marshal.ReadInt32(lParam);
 
-                // Debug.WriteLine("Starting");
-                // To prevent slowing keyboard input down, we use handle keyboard inputs in a separate thread
-                ThreadPool.QueueUserWorkItem(this.HandleSingleKeyboardInput, new KeyboardParams(wParam, vkCode));
-                // Debug.WriteLine("Ending");
+                var blocking = this.HandleSingleKeyboardInput(wParam, vkCode);
+
+                if (blocking)
+                    return (IntPtr)1;
             }
 
             return CallNextHookEx(_hookId, nCode, wParam, lParam);
         }
 
-        /// <summary>
-        /// Handles a keyboard event based on the KeyboardParams it receives
-        /// </summary>
-        /// <param name="keyboardParamsObj">KeyboardParams struct (object type to comply with QueueUserWorkItem)</param>
-        private void HandleSingleKeyboardInput(object keyboardParamsObj)
+        private bool HandleSingleKeyboardInput(IntPtr wParam, int vkCode)
         {
-            var keyboardParams = (KeyboardParams)keyboardParamsObj;
-            var wParam = keyboardParams.wParam;
-            var vkCode = keyboardParams.vkCode;
-
             var modifierKey = ModifierKeysUtilities.GetModifierKeyFromCode(vkCode);
+            var blocking = false;
 
             // If the keyboard event is a KeyDown event (i.e. key pressed)
             if (wParam == (IntPtr)WM_KEYDOWN || wParam == (IntPtr)WM_SYSKEYDOWN)
@@ -263,7 +263,7 @@ namespace NonInvasiveKeyboardHookLibrary
                 // Trigger callbacks that are registered for this key, but only once per key press
                 if (!this._downKeys.Contains(vkCode))
                 {
-                    this.HandleKeyPress(vkCode);
+                    blocking = this.HandleKeyPress(vkCode);
                     this._downKeys.Add(vkCode);
                 }
             }
@@ -282,6 +282,8 @@ namespace NonInvasiveKeyboardHookLibrary
 
                 this._downKeys.Remove(vkCode);
             }
+
+            return blocking;
         }
 
         private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
@@ -298,7 +300,7 @@ namespace NonInvasiveKeyboardHookLibrary
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode,
             IntPtr wParam, IntPtr lParam);
-        
+
         /// <summary>
         /// Loads the library.
         /// </summary>
