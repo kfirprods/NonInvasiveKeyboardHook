@@ -92,9 +92,9 @@ namespace NonInvasiveKeyboardHookLibrary
         /// <param name="blocking">Boolean indicating wether to block the original shortcut from propagating</param>
         /// <exception cref="HotkeyAlreadyRegisteredException">Thrown when the given key is already mapped to a callback</exception>
         /// /// <returns>Unique identifier of this hotkey, which can be used to remove it later</returns>
-        public Guid RegisterHotkey(int virtualKeyCode, Action action, bool blocking = false)
+        public List<Guid> RegisterHotkey(int virtualKeyCode, Action action, bool blocking = false, List<int> alternativVirtualKeyCode = null)
         {
-            return this.RegisterHotkey(new ModifierKeys[0], virtualKeyCode, action, blocking);
+            return this.RegisterHotkey(new ModifierKeys[0], virtualKeyCode, action, blocking, alternativVirtualKeyCode);
         }
 
         /// <summary>
@@ -106,14 +106,14 @@ namespace NonInvasiveKeyboardHookLibrary
         /// <param name="blocking">Boolean indicating wether to block the original shortcut from propagating</param>
         /// <exception cref="HotkeyAlreadyRegisteredException">Thrown when the given key combination is already mapped to a callback</exception>
         /// <returns>Unique identifier of this hotkey, which can be used to remove it later</returns>
-        public Guid RegisterHotkey(ModifierKeys modifiers, int virtualKeyCode, Action action, bool blocking = false)
+        public List<Guid> RegisterHotkey(ModifierKeys modifiers, int virtualKeyCode, Action action, bool blocking = false, List<int> alternativVirtualKeyCode = null)
         {
             var allModifiers = Enum.GetValues(typeof(ModifierKeys)).Cast<ModifierKeys>().ToArray();
 
             // Get the modifiers that were chained with bitwise OR operation as an array of modifiers
             var selectedModifiers = allModifiers.Where(modifier => modifiers.HasFlag(modifier)).ToArray();
 
-            return RegisterHotkey(selectedModifiers, virtualKeyCode, action, blocking);
+            return RegisterHotkey(selectedModifiers, virtualKeyCode, action, blocking, alternativVirtualKeyCode);
         }
 
         /// <summary>
@@ -125,18 +125,35 @@ namespace NonInvasiveKeyboardHookLibrary
         /// <param name="blocking">Boolean indicating wether to block the original shortcut from propagating</param>
         /// <exception cref="HotkeyAlreadyRegisteredException">Thrown when the given key combination is already mapped to a callback</exception>
         /// <returns>Unique identifier of this hotkey, which can be used to remove it later</returns>
-        public Guid RegisterHotkey(ModifierKeys[] modifiers, int virtualKeyCode, Action action, bool blocking = false)
+        public List<Guid> RegisterHotkey(ModifierKeys[] modifiers, int virtualKeyCode, Action action, bool blocking = false, List<int> alternativVirtualKeyCode = null)
         {
-            var keybindIdentity = Guid.NewGuid();
-            var keybind = new KeybindStruct(modifiers, virtualKeyCode, keybindIdentity);
-            if (this._registeredCallbacks.ContainsKey(keybind))
+            List<Guid> resultIdentitys = new List<Guid>();
+
+            List<int> keysToRegister = new List<int>();
+            keysToRegister.Add(virtualKeyCode);
+            if(alternativVirtualKeyCode != null)
             {
-                throw new HotkeyAlreadyRegisteredException();
+                alternativVirtualKeyCode.Remove(virtualKeyCode);
+                keysToRegister.AddRange(alternativVirtualKeyCode);
             }
 
-            var callbackStruct = new CallbackStruct(action, blocking);
-            this._registeredCallbacks[keybind] = callbackStruct;
-            return keybindIdentity;
+            foreach (int key in keysToRegister)
+            {
+                var keybindIdentity = Guid.NewGuid();
+                var keybind = new KeybindStruct(modifiers, key, keybindIdentity);
+                if (this._registeredCallbacks.ContainsKey(keybind))
+                {
+                    throw new HotkeyAlreadyRegisteredException();
+                }
+
+                var callbackStruct = new CallbackStruct(action, blocking);
+                this._registeredCallbacks[keybind] = callbackStruct;
+
+                resultIdentitys.Add(keybindIdentity);
+            }
+           
+           
+            return resultIdentitys;
         }
 
         /// <summary>
